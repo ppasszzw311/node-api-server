@@ -20,7 +20,7 @@ pool.connect()
 
 
 app.get('/', (req, res) => {
-  res.send('Hello, Zeabur!');
+  res.send(`Hello, Zeabur! ${connectres}`);
 });
 
 app.listen(PORT, () => {
