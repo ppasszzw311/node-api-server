@@ -17,7 +17,7 @@ let connectres = ''
 // 建立會員表
 const createTable = async () => {
   const query = `
-  REATE TABLE IF NOT EXISTS members (
+  CREATE TABLE IF NOT EXISTS members (
             id SERIAL PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
             email VARCHAR(100) UNIQUE NOT NULL,
