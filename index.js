@@ -49,10 +49,10 @@ const initDatabase = async () => {
 // 连接数据库并初始化
 pool.connect()
   .then(async () => {
-    console.log('Connected to PostgreSQL');
+    connectres = 'Connected to PostgreSQL';
     await initDatabase();
   })
-  .catch(err => console.error('Connection error', err.stack));
+  .catch(err => connectres = `Connection error, ${err.stack}`);
 
 app.get('/api/members', async (req, res) => {
   try {
