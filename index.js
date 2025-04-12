@@ -13,8 +13,9 @@ if (!process.env.LINE_CHANNEL_ACCESS_TOKEN || !process.env.LINE_CHANNEL_SECRET) 
 
 // Line Messaging API 配置
 const config = {
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
   channelSecret: process.env.LINE_CHANNEL_SECRET
-}
+};
 
 // create line sdk client
 const client = new line.messagingApi.MessagingApiClient({
@@ -91,39 +92,26 @@ app.post('/callback', line.middleware(config), (req, res) => {
     .all(req.body.events.map(handleEvent))
     .then((result) => res.json(result))
     .catch((err) => {
-      console.error(err);
+      console.error('Webhook 处理出错:', err);
       res.status(500).end();
-    })
-})
+    });
+});
 
 // enven handler
 function handleEvent(event) {
-  if (event.type != 'message' || event.message.type != 'text') {
+  if (event.type !== 'message' || event.message.type !== 'text') {
     return Promise.resolve(null);
   }
 
   const echo = { type: 'text', text: event.message.text };
+  console.log('发送回复:', JSON.stringify(echo, null, 2));
 
-  return client.replyMessage({
-    replyToken: event.replyToken,
-    messages: [echo],
-  });
+  return client.replyMessage(event.replyToken, echo);
 }
-
-// Line Webhook 路由
-app.post('/webhook', (req, res, next) => {
-  console.log('收到请求头:', JSON.stringify(req.headers, null, 2));
-  console.log('收到请求体:', JSON.stringify(req.body, null, 2));
-  console.log('当前配置的 Channel Secret:', process.env.LINE_CHANNEL_SECRET);
-  res.send('ok');ß
-  //line.middleware(lineConfig)(req, res, next);
-});
-
 
 app.get('/', (req, res) => {
   res.send(`Hello, Zeabur! ${connectres}`);
 });
-
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT} and db con is ${connectres}`);
