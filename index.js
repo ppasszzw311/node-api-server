@@ -12,12 +12,14 @@ if (!process.env.LINE_CHANNEL_ACCESS_TOKEN || !process.env.LINE_CHANNEL_SECRET) 
 }
 
 // Line Messaging API 配置
-const lineConfig = {
-  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+const config = {
   channelSecret: process.env.LINE_CHANNEL_SECRET
-};
+}
 
-const client = new line.Client(lineConfig);
+// create line sdk client
+const client = new line.messagingApi.MessagingApiClient({
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+});
 
 // 中间件配置
 app.use(express.json());
@@ -83,39 +85,45 @@ app.get('/api/members', async (req, res) => {
   }
 });
 
+// Line Callback route
+app.post('/callback', line.middleware(config), (req, res) => {
+  Promise
+    .all(req.body.events.map(handleEvent))
+    .then((result) => res.json(result))
+    .catch((err) => {
+      console.error(err);
+      res.status(500).end();
+    })
+})
+
+// enven handler
+function handleEvent(event) {
+  if (event.type != 'message' || event.message.type != 'text') {
+    return Promise.resolve(null);
+  }
+
+  const echo = { type: 'text', text: event.message.text };
+
+  return client.replyMessage({
+    replyToken: event.replyToken,
+    messages: [echo],
+  });
+}
+
+// Line Webhook 路由
+app.post('/webhook', (req, res, next) => {
+  console.log('收到请求头:', JSON.stringify(req.headers, null, 2));
+  console.log('收到请求体:', JSON.stringify(req.body, null, 2));
+  console.log('当前配置的 Channel Secret:', process.env.LINE_CHANNEL_SECRET);
+  
+  line.middleware(lineConfig)(req, res, next);
+});
+
+
 app.get('/', (req, res) => {
   res.send(`Hello, Zeabur! ${connectres}`);
 });
 
-// Line Webhook 路由
-app.post('/webhook', line.middleware(lineConfig), async (req, res) => {
-  try {
-    console.log('收到 Line Webhook 请求:', JSON.stringify(req.body, null, 2));
-    
-    const events = req.body.events;
-    const results = await Promise.all(
-      events.map(async (event) => {
-        try {
-          console.log('处理事件:', JSON.stringify(event, null, 2));
-          
-          if (event.type === 'message' && event.message.type === 'text') {
-            // 处理文本消息
-            const echo = { type: 'text', text: event.message.text };
-            console.log('发送回复:', JSON.stringify(echo, null, 2));
-            return client.replyMessage(event.replyToken, echo);
-          }
-        } catch (err) {
-          console.error('处理事件时出错:', err);
-          return null;
-        }
-      })
-    );
-    res.json(results);
-  } catch (err) {
-    console.error('Webhook 处理出错:', err);
-    res.status(500).end();
-  }
-});
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT} and db con is ${connectres}`);
