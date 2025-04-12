@@ -115,8 +115,8 @@ app.post('/webhook', (req, res, next) => {
   console.log('收到请求头:', JSON.stringify(req.headers, null, 2));
   console.log('收到请求体:', JSON.stringify(req.body, null, 2));
   console.log('当前配置的 Channel Secret:', process.env.LINE_CHANNEL_SECRET);
-  
-  line.middleware(lineConfig)(req, res, next);
+  res.send('ok');ß
+  //line.middleware(lineConfig)(req, res, next);
 });
 
 
